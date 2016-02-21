@@ -16,3 +16,6 @@ Example for Jurassic Park :
 ```
   Jurassic Park (1993 - Steven Spielberg) Sam Neill, Laura Dern, Jeff Goldblum, Richard Attenborough
 ```
+
+# License
+omdb-tool is licensed under the GPL version 3.0. See LICENSE for more details
