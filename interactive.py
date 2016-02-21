@@ -46,6 +46,8 @@ if __name__ == "__main__":
                     r = results[i]
                     print("%d [%s - %s]> %s [%s]" % (i, r["Type"], r["Year"], r["Title"], r["imdbID"]))
                 moviechoice = -1
+                if len(result) == 1:
+                    moviechoice = 0
                 while not moviechoice in range(0, len(results)) :
                     moviechoice = input("Movie choice (ENTER to cancel)> ")
                     if moviechoice == "" :
