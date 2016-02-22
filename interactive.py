@@ -17,6 +17,42 @@
     along with omdb-tool.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+
+def displayMovieChoice(results):
+    for i in range(0,len(results)) :
+        r = results[i]
+        print("%d [%s - %s]> %s [%s]" % (i, r["Type"], r["Year"], r["Title"], r["imdbID"]))
+    moviechoice = -1
+    if len(results) == 1:
+        return 0
+    while not moviechoice in range(0, len(results)) :
+        moviechoice = input("Movie choice (ENTER to cancel)> ")
+        if moviechoice == "" :
+            break
+        try :
+            moviechoice = int(moviechoice)
+        except :
+            print("You should input an integer !")
+    return moviechoice
+
+def displayMovieName(movieId):
+    moviedata = api.RequestMovieDetails(movieId)
+    moviepath = api.NormalizeWindowsPath("%s (%s - %s) %s" % (moviedata["Title"], moviedata["Year"], moviedata["Director"], moviedata["Actors"]))
+    print(moviepath)
+    print("Genre : %s" % (moviedata["Genre"]))
+    print("Plot  : %s" % (moviedata["Plot"]))
+    return moviedata
+
+def processMovieQuery(moviename):
+    results = api.RequestMovie(moviename)
+    if results == None:
+        print("Bad query has been submitted, please try again")
+        return None
+    moviechoice = displayMovieChoice(results)
+    if moviechoice == "":
+        return None
+    return displayMovieName(results[moviechoice]["imdbID"])
+
 if __name__ == "__main__":
     import os, sys, argparse, json
     import omdbapi
@@ -27,8 +63,16 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--directory", help="Directory to process movies from")
     args = parser.parse_args()
     if (args.directory) :
-        # TODO: loop in directory and propose choices to user
-        pass
+        if(not os.path.exists(args.directory)) :
+            parser.print_help()
+            sys.exit(1)
+        else :
+            for f in os.listdir(args.directory):
+                path = os.path.join(args.directory,f)
+                if os.path.isdir(path):
+                    continue
+                print("Processing: ", os.path.splitext(f)[0])
+                moviedata = processMovieQuery(os.path.splitext(f)[0])
     else :
         print("After one search, say '--print' to display the raw JSON")
         while(True) :
@@ -38,30 +82,4 @@ if __name__ == "__main__":
             if moviename == "--print" :
                 print(json.dumps(moviedata, sort_keys = False, indent = 4))
             else :
-                results = api.RequestMovie(moviename)
-                if results == None:
-                    print("Bad query has been submitted, please try again")
-                    continue
-                for i in range(0,len(results)) :
-                    r = results[i]
-                    print("%d [%s - %s]> %s [%s]" % (i, r["Type"], r["Year"], r["Title"], r["imdbID"]))
-                moviechoice = -1
-                if len(result) == 1:
-                    moviechoice = 0
-                while not moviechoice in range(0, len(results)) :
-                    moviechoice = input("Movie choice (ENTER to cancel)> ")
-                    if moviechoice == "" :
-                        break
-                    try :   
-                        moviechoice = int(moviechoice)
-                    except :
-                        print("You should input an integer !")
-                if moviechoice == "":
-                    continue
-                moviedata = api.RequestMovieDetails(results[moviechoice]["imdbID"])
-                moviepath = api.NormalizeWindowsPath("%s (%s - %s) %s" % (moviedata["Title"], moviedata["Year"], moviedata["Director"], moviedata["Actors"]))
-                print(moviepath)
-                print("Genre : %s" % (moviedata["Genre"]))
-                print("Plot  : %s" % (moviedata["Plot"]))
-    
-
+                movidedata = processMovieQuery(moviename)
