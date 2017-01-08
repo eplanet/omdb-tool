@@ -9,7 +9,7 @@ Simply launch python3 interactive.py, and that should do the trick
 
 The tool asks for a search chain which should consist in the movie name. Then is retrieve some results that it displays, leaving the choice to interactively select a result to get it printed in a standard formatted way :
 ```
-  Move Title (Year - Director) Actor1, Actor2, ...
+  Movie Title (Year - Director) Actor1, Actor2, ...
 ```
 
 Example for Jurassic Park :

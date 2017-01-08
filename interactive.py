@@ -55,9 +55,9 @@ def processMovieQuery(moviename):
 
 if __name__ == "__main__":
     import os, sys, argparse, json
-    import omdbapi
+    import omdbtool
     
-    api = omdbapi.omdbapi()
+    api = omdbtool.omdbapi()
     moviedata = None
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--directory", help="Directory to process movies from")
