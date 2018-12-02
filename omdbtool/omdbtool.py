@@ -17,51 +17,18 @@
     along with omdb-tool.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
-def displayMovieChoice(results):
-    for i in range(0,len(results)) :
-        r = results[i]
-        print("%d [%s - %s]> %s [%s]" % (i, r["Type"], r["Year"], r["Title"], r["imdbID"]))
-    moviechoice = -1
-    if len(results) == 1:
-        return 0
-    while not moviechoice in range(0, len(results)) :
-        moviechoice = input("Movie choice (ENTER to cancel)> ")
-        if moviechoice == "" :
-            break
-        try :
-            moviechoice = int(moviechoice)
-        except :
-            print("You should input an integer !")
-    return moviechoice
-
-def displayMovieName(movieId):
-    moviedata = api.RequestMovieDetails(movieId)
-    moviepath = api.NormalizeWindowsPath("%s (%s - %s) %s" % (moviedata["Title"], moviedata["Year"], moviedata["Director"], moviedata["Actors"]))
-    print(moviepath)
-    print("Genre : %s" % (moviedata["Genre"]))
-    print("Plot  : %s" % (moviedata["Plot"]))
-    return moviedata
-
-def processMovieQuery(moviename):
-    results = api.RequestMovie(moviename)
-    if results == None:
-        print("Bad query has been submitted, please try again")
-        return None
-    moviechoice = displayMovieChoice(results)
-    if moviechoice == "":
-        return None
-    return displayMovieName(results[moviechoice]["imdbID"])
-
-if __name__ == "__main__":
+def run():
     import os, sys, argparse, json
     import omdbtool
     
-    api = omdbtool.omdbapi()
     moviedata = None
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--directory", help="Directory to process movies from")
+    parser.add_argument("-a", "--apikey", required=True,
+        help="API key to use OMDb API")
+    parser.add_argument("-d", "--directory",
+        help="Directory to process movies from")
     args = parser.parse_args()
+    api = omdbtool.omdbapi(args.apikey)
     if (args.directory) :
         if(not os.path.exists(args.directory)) :
             parser.print_help()
@@ -72,7 +39,7 @@ if __name__ == "__main__":
                 if os.path.isdir(path):
                     continue
                 print("Processing: ", os.path.splitext(f)[0])
-                moviedata = processMovieQuery(os.path.splitext(f)[0])
+                moviedata = api.process_movie_query(os.path.splitext(f)[0])
     else :
         print("After one search, say '--print' to display the raw JSON")
         while(True) :
@@ -82,4 +49,7 @@ if __name__ == "__main__":
             if moviename == "--print" :
                 print(json.dumps(moviedata, sort_keys = False, indent = 4))
             else :
-                movidedata = processMovieQuery(moviename)
+                movidedata = api.process_movie_query(moviename)
+
+if __name__ == "__main__":
+    run()

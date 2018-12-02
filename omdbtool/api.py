@@ -28,7 +28,10 @@ CHAR_DELETE = "()"
 
 class omdbapi:
 
-    def FormatInputToQuery(self, moviename) :
+    def __init__(self, apikey):
+        self.apikey = apikey
+
+    def format_input_to_query(self, moviename) :
         format = moviename
         for c in CHAR_REPLACE :
             format = format.replace(c, "+")
@@ -43,13 +46,21 @@ class omdbapi:
                 ret += m
         return ret + year
 
-    def NormalizeWindowsPath(self, iPath):
+    def get_search_url(self, moviename):
+        query = self.format_input_to_query(moviename)
+        return "%s%s&apikey=%s" % (URL_SEARCH, query, self.apikey)
+
+    def get_imdb_url(self, imdb_id):
+        return "%s%s&apikey=%s" % (URL_GETIMDB, imdb_id, self.apikey)
+
+    def format_path(self, iPath):
         return re.sub('[:/]', '', iPath)
 
-    def RequestMovie(self, moviename) :
-        query = self.FormatInputToQuery(moviename)
-        print(URL_SEARCH + query)
-        movie = json.loads(urllib.request.urlopen(URL_SEARCH + query).readline().decode())
+    def request_movie(self, moviename) :
+        api_url = self.get_search_url(moviename)
+        print(api_url)
+
+        movie = json.loads(urllib.request.urlopen(api_url).readline().decode())
         if "Response" in movie and movie["Response"] == "False" :
             print("        Impossible to retrieve : '%s'" % (moviename))
             print("        Reason         : '%s'" % (movie["Error"]))
@@ -62,8 +73,11 @@ class omdbapi:
             #{"Search":[{"Title":"Heaven & Earth","Year":"1993","imdbID":"tt0107096","Type":"movie"}]}
         return results
 
-    def RequestMovieDetails(self, imdbId):
-        movie = json.loads(urllib.request.urlopen(URL_GETIMDB + imdbId).readline().decode())
+    def request_movie_details(self, imdb_id):
+        api_url = self.get_imdb_url(imdb_id)
+        print(api_url)
+
+        movie = json.loads(urllib.request.urlopen(api_url).readline().decode())
         if movie["Response"] == "False" :
             print("        Impossible to retrieve : '%s'" % (moviename))
             print("        Reason         : '%s'" % (movie["Error"]))
@@ -82,6 +96,41 @@ class omdbapi:
         """
         return movie
     
+    def display_movie_choice(self, results):
+        for i in range(0,len(results)) :
+            r = results[i]
+            print("%d [%s - %s]> %s [%s]" % (i, r["Type"], r["Year"], r["Title"], r["imdbID"]))
+        moviechoice = -1
+        if len(results) == 1:
+            return 0
+        while not moviechoice in range(0, len(results)) :
+            moviechoice = input("Movie choice (ENTER to cancel)> ")
+            if moviechoice == "" :
+                break
+            try :
+                moviechoice = int(moviechoice)
+            except :
+                print("You should input an integer !")
+        return moviechoice
+
+    def display_movie_name(self, movie_id):
+        moviedata = self.request_movie_details(movie_id)
+        moviepath = self.format_path("%s (%s - %s) %s" % (moviedata["Title"], moviedata["Year"], moviedata["Director"], moviedata["Actors"]))
+        print(moviepath)
+        print("Genre : %s" % (moviedata["Genre"]))
+        print("Plot  : %s" % (moviedata["Plot"]))
+        return moviedata
+
+    def process_movie_query(self, moviename):
+        results = self.request_movie(moviename)
+        if results == None:
+            print("Bad query has been submitted, please try again")
+            return None
+        moviechoice = self.display_movie_choice(results)
+        if moviechoice == "":
+            return None
+        return self.display_movie_name(results[moviechoice]["imdbID"])
+
     """
     def RecurseOverAllMovies(self, iDir, iFunction) :
         r = re.compile("[(-]+")
@@ -91,7 +140,7 @@ class omdbapi:
             print(moviequery)
             if iFunction != None :
                 iFunction(moviequery)
-            #self.RequestMovie(moviequery)
+            #self.request_movie(moviequery)
 
     def DownloadPoster(self, iURL, iPath) :
         if iURL == "N/A" :
@@ -103,11 +152,11 @@ class omdbapi:
             urllib.request.urlretrieve(iURL, iPath + fileExtension)
 
     def RequestPoster(self, moviename, outputdir) :
-        query = FormatInputToQuery(moviename)
+        query = format_input_to_query(moviename)
         print(URL_TITLE + query)
         movie = json.loads(urllib.request.urlopen(URL_TITLE + query).readline().decode())
         if "Poster" in movie and movie["Poster"] != "N/A" :
-            moviepath = self.NormalizeWindowsPath("%s (%s - %s) %s" % (movie["Title"], movie["Year"], movie["Director"], movie["Actors"]))
+            moviepath = self.format_path("%s (%s - %s) %s" % (movie["Title"], movie["Year"], movie["Director"], movie["Actors"]))
             jsondatasavepath = os.path.join(outputdir, moviepath) + ".json"
             print("Downloading '%s' in '%s'" % (movie["Poster"], moviepath))
             open(jsondatasavepath, "w").write(json.dumps(movie, sort_keys = False, indent = 4))
